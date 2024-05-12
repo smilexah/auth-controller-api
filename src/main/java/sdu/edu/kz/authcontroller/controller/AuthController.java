@@ -48,7 +48,7 @@ public class AuthController {
             return ResponseEntity.ok(new TokenDTO(tokenService.generateToken(authentication)));
         } catch (Exception e) {
             log.debug(AccountError.TOKEN_GENERATOR_ERROR.toString() + ": " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return new ResponseEntity<>(new TokenDTO(null), HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -63,11 +63,9 @@ public class AuthController {
 
             account.setEmail(accountDTO.getEmail());
             account.setPassword(accountDTO.getPassword());
-//            account.setRole("ROLE_USER");
 
             accountService.save(account);
 
-//            return new ResponseEntity<>(new Gson().toJson(AccountSuccess.ACCOUNT_ADDED.toString()), HttpStatus.OK);
             return ResponseEntity.ok(AccountSuccess.ACCOUNT_ADDED.toString());
         } catch (Exception e) {
             log.debug(AccountError.ADD_ACCOUNT_ERROR.toString() + ": " + e.getMessage());
@@ -91,8 +89,29 @@ public class AuthController {
         return accounts;
     }
 
+    @PutMapping(value = "/users/{userId}/update-authorities", produces = "application/json", consumes = "application/json")
+    @ApiResponse(responseCode = "200", description = "Authority updated")
+    @ApiResponse(responseCode = "400", description = "Invalid user id")
+    @ApiResponse(responseCode = "401", description = "Token missing")
+    @ApiResponse(responseCode = "403", description = "Token error")
+    @Operation(summary = "Update authorities")
+    @SecurityRequirement(name = "sduedu-demo-api")
+    public ResponseEntity<AccountViewDTO> updateAuthorities(@Valid @RequestBody AuthoritiesDTO authoritiesDTO, @PathVariable Long userId) {
+        Optional<Account> optionalAccount = accountService.findById(userId);
+
+        if (optionalAccount.isPresent()) {
+            Account account = optionalAccount.get();
+            account.setAuthorities(authoritiesDTO.getAuthorities());
+            accountService.save(account);
+
+            return ResponseEntity.ok(new AccountViewDTO(account.getAccountID(), account.getEmail(), account.getAuthorities()));
+        }
+
+        return new ResponseEntity<>(new AccountViewDTO(), HttpStatus.BAD_REQUEST);
+    }
+
     @GetMapping(value = "/profile", produces = "application/json")
-    @ApiResponse(responseCode = "200", description = "My Profile")
+    @ApiResponse(responseCode = "200", description = "Profile")
     @ApiResponse(responseCode = "401", description = "Token missing")
     @ApiResponse(responseCode = "403", description = "Token error")
     @Operation(summary = "View Profile")
@@ -101,12 +120,9 @@ public class AuthController {
         String email = authentication.getName();
         Optional<Account> optionalAccount = accountService.findByEmail(email);
 
-        if (optionalAccount.isPresent()) {
-            Account account = optionalAccount.get();
-            return new ProfileDTO(account.getAccountID(), account.getEmail(), account.getAuthorities());
-        }
+        Account account = optionalAccount.get();
 
-        return null;
+        return new ProfileDTO(account.getAccountID(), account.getEmail(), account.getAuthorities());
     }
 
     @PutMapping(value = "/profile/update-password", produces = "application/json", consumes = "application/json")
@@ -119,14 +135,10 @@ public class AuthController {
         String email = authentication.getName();
         Optional<Account> optionalAccount = accountService.findByEmail(email);
 
-        if (optionalAccount.isPresent()) {
-            Account account = optionalAccount.get();
-            account.setPassword(passwordDTO.getPassword());
-            accountService.save(account);
+        Account account = optionalAccount.get();
+        account.setPassword(passwordDTO.getPassword());
+        accountService.save(account);
 
-            return new AccountViewDTO(account.getAccountID(), account.getEmail(), account.getAuthorities());
-        }
-
-        return null;
+        return new AccountViewDTO(account.getAccountID(), account.getEmail(), account.getAuthorities());
     }
 }
