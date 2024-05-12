@@ -1,6 +1,5 @@
 package sdu.edu.kz.authcontroller.controller;
 
-import com.nimbusds.jose.shaded.gson.Gson;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -37,6 +36,9 @@ public class AuthController {
 
     @PostMapping("/token")
     @ResponseStatus(HttpStatus.OK)
+    @ApiResponse(responseCode = "400", description = "Please enter a valid email or password length between from 6 to 20 characters")
+    @ApiResponse(responseCode = "200", description = "Token generated")
+    @Operation(summary = "Generate a new Token")
     public ResponseEntity<TokenDTO> token(@Valid @RequestBody UserLoginDTO userLoginDTO) {
         try {
             Authentication authentication = authenticationManager
@@ -102,6 +104,27 @@ public class AuthController {
         if (optionalAccount.isPresent()) {
             Account account = optionalAccount.get();
             return new ProfileDTO(account.getAccountID(), account.getEmail(), account.getAuthorities());
+        }
+
+        return null;
+    }
+
+    @PutMapping(value = "/profile/update-password", produces = "application/json", consumes = "application/json")
+    @ApiResponse(responseCode = "200", description = "Password updated")
+    @ApiResponse(responseCode = "401", description = "Token missing")
+    @ApiResponse(responseCode = "403", description = "Token error")
+    @Operation(summary = "Update Password")
+    @SecurityRequirement(name = "sduedu-demo-api")
+    public AccountViewDTO updatePassword(@Valid @RequestBody PasswordDTO passwordDTO, Authentication authentication) {
+        String email = authentication.getName();
+        Optional<Account> optionalAccount = accountService.findByEmail(email);
+
+        if (optionalAccount.isPresent()) {
+            Account account = optionalAccount.get();
+            account.setPassword(passwordDTO.getPassword());
+            accountService.save(account);
+
+            return new AccountViewDTO(account.getAccountID(), account.getEmail(), account.getAuthorities());
         }
 
         return null;
