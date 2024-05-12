@@ -76,9 +76,10 @@ public class SecurityConfig {
 //                .csrf(csrf -> csrf.ignoringRequestMatchers("/db-console/**"))
                 .headers((headers) -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**").permitAll() // or (/**)
-                        .requestMatchers("/users-add").permitAll()
-                        .requestMatchers("/token").permitAll()
+                        .requestMatchers("/auth/users/add").permitAll()
+                        .requestMatchers("/auth/users").hasAuthority("SCOPE_ADMIN")
+                        .requestMatchers("/auth/profile").authenticated()
+                        .requestMatchers("/auth/token").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/test").authenticated()

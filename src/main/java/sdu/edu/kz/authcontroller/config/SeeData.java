@@ -4,6 +4,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import sdu.edu.kz.authcontroller.entity.Account;
 import sdu.edu.kz.authcontroller.services.AccountService;
+import sdu.edu.kz.authcontroller.util.constants.Authority;
 
 @Component
 public class SeeData implements CommandLineRunner {
@@ -20,12 +21,12 @@ public class SeeData implements CommandLineRunner {
 
         account.setEmail("user@user.com");
         account.setPassword("user12");
-        account.setRole("ROLE_USER");
+        account.setAuthorities(Authority.USER.toString());
         accountService.save(account);
 
         account1.setEmail("admin@admin.com");
         account1.setPassword("admin12");
-        account1.setRole("ROLE_ADMIN");
+        account1.setAuthorities(Authority.ADMIN.toString() + " " + Authority.USER.toString());
         accountService.save(account1);
     }
 }

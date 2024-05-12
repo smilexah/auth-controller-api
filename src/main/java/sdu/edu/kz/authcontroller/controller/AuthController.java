@@ -3,6 +3,7 @@ package sdu.edu.kz.authcontroller.controller;
 import com.nimbusds.jose.shaded.gson.Gson;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -14,10 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import sdu.edu.kz.authcontroller.entity.Account;
-import sdu.edu.kz.authcontroller.payload.auth.AccountDTO;
-import sdu.edu.kz.authcontroller.payload.auth.AccountViewDTO;
-import sdu.edu.kz.authcontroller.payload.auth.TokenDTO;
-import sdu.edu.kz.authcontroller.payload.auth.UserLoginDTO;
+import sdu.edu.kz.authcontroller.payload.auth.*;
 import sdu.edu.kz.authcontroller.services.AccountService;
 import sdu.edu.kz.authcontroller.services.TokenService;
 import sdu.edu.kz.authcontroller.util.constants.AccountError;
@@ -25,6 +23,7 @@ import sdu.edu.kz.authcontroller.util.constants.AccountSuccess;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -54,7 +53,7 @@ public class AuthController {
     @PostMapping(value = "/users/add", consumes = "application/json", produces = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
     @ApiResponse(responseCode = "400", description = "Please enter a valid email and password length between from 6 to 20 characters")
-    @ApiResponse(responseCode = "201", description = "Account added")
+    @ApiResponse(responseCode = "200", description = "Account added")
     @Operation(summary = "Add a new User")
     public ResponseEntity<String> addUser(@Valid @RequestBody AccountDTO accountDTO) {
         try {
@@ -62,7 +61,7 @@ public class AuthController {
 
             account.setEmail(accountDTO.getEmail());
             account.setPassword(accountDTO.getPassword());
-            account.setRole("ROLE_USER");
+//            account.setRole("ROLE_USER");
 
             accountService.save(account);
 
@@ -76,23 +75,35 @@ public class AuthController {
 
     @GetMapping(value = "/users", produces = "application/json")
     @ApiResponse(responseCode = "200", description = "List of users")
+    @ApiResponse(responseCode = "401", description = "Token missing")
+    @ApiResponse(responseCode = "403", description = "Token error")
     @Operation(summary = "List of users API")
+    @SecurityRequirement(name = "sduedu-demo-api")
     public List<AccountViewDTO> getUsers() {
         List<AccountViewDTO> accounts = new ArrayList<>();
 
         for (Account account : accountService.findAll()) {
-            accounts.add(new AccountViewDTO(account.getAccountID(), account.getEmail(), account.getRole()));
+            accounts.add(new AccountViewDTO(account.getAccountID(), account.getEmail(), account.getAuthorities()));
         }
 
         return accounts;
     }
-//    public ResponseEntity<List> getUsers() {
-//        try {
-//            List<Account> accounts = accountService.findAll();
-//            return new ResponseEntity<>(accounts, HttpStatus.OK);
-//        } catch (Exception e) {
-//            log.debug(AccountError.ADD_ACCOUNT_ERROR.toString() + ": " + e.getMessage());
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-//        }
-//    }
+
+    @GetMapping(value = "/profile", produces = "application/json")
+    @ApiResponse(responseCode = "200", description = "My Profile")
+    @ApiResponse(responseCode = "401", description = "Token missing")
+    @ApiResponse(responseCode = "403", description = "Token error")
+    @Operation(summary = "View Profile")
+    @SecurityRequirement(name = "sduedu-demo-api")
+    public ProfileDTO getProfile(Authentication authentication) {
+        String email = authentication.getName();
+        Optional<Account> optionalAccount = accountService.findByEmail(email);
+
+        if (optionalAccount.isPresent()) {
+            Account account = optionalAccount.get();
+            return new ProfileDTO(account.getAccountID(), account.getEmail(), account.getAuthorities());
+        }
+
+        return null;
+    }
 }

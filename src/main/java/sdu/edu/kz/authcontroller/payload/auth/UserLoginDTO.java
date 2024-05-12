@@ -14,6 +14,6 @@ public class UserLoginDTO {
     private String email;
 
     @Size(min = 6, max = 20)
-    @Schema(description = "Password", example = "password", requiredMode = Schema.RequiredMode.REQUIRED, minLength = 6, maxLength = 20)
+    @Schema(description = "Password", example = "user12", requiredMode = Schema.RequiredMode.REQUIRED, minLength = 6, maxLength = 20)
     private String password;
 }

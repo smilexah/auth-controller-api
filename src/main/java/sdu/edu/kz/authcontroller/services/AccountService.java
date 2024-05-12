@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import sdu.edu.kz.authcontroller.entity.Account;
 import sdu.edu.kz.authcontroller.repository.AccountRepository;
+import sdu.edu.kz.authcontroller.util.constants.Authority;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +26,8 @@ public class AccountService implements UserDetailsService {
     public Account save(Account account) {
         account.setPassword(passwordEncoder.encode(account.getPassword()));
 
-        if (account.getRole() == null) {
-            account.setRole("ROLE_USER");
+        if (account.getAuthorities() == null) {
+            account.setAuthorities(Authority.USER.toString());
         }
 
         return accountRepository.save(account);
@@ -34,6 +35,10 @@ public class AccountService implements UserDetailsService {
 
     public List<Account> findAll() {
         return accountRepository.findAll();
+    }
+
+    public Optional<Account> findByEmail(String email) {
+        return accountRepository.findByEmail(email);
     }
 
     @Override
@@ -48,7 +53,7 @@ public class AccountService implements UserDetailsService {
 
         List<GrantedAuthority> grantedAuthority = new ArrayList<>();
 
-        grantedAuthority.add(new SimpleGrantedAuthority(account.getRole()));
+        grantedAuthority.add(new SimpleGrantedAuthority(account.getAuthorities()));
 
         return new User(account.getEmail(), account.getPassword(), grantedAuthority);
     }

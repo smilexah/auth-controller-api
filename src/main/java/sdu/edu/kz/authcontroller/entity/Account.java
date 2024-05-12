@@ -16,10 +16,7 @@ public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long accountID;
-
     private String email;
-
     private String password;
-
-    private String role;
+    private String authorities;
 }
