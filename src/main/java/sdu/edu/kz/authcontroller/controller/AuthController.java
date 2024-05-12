@@ -26,7 +26,7 @@ import java.util.Optional;
 
 @Slf4j
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 @Tag(name = "Auth Controller", description = "Controller for Account management")
 @AllArgsConstructor
 public class AuthController {
@@ -140,5 +140,25 @@ public class AuthController {
         accountService.save(account);
 
         return new AccountViewDTO(account.getAccountID(), account.getEmail(), account.getAuthorities());
+    }
+
+    @DeleteMapping(value = "/profile/delete")
+    @ApiResponse(responseCode = "200", description = "User deleted")
+    @ApiResponse(responseCode = "400", description = "Invalid user id")
+    @ApiResponse(responseCode = "401", description = "Token missing")
+    @ApiResponse(responseCode = "403", description = "Token error")
+    @Operation(summary = "Delete User")
+    @SecurityRequirement(name = "sduedu-demo-api")
+    public ResponseEntity<String> deleteUser(Authentication authentication) {
+        String email = authentication.getName();
+        Optional<Account> optionalAccount = accountService.findByEmail(email);
+
+        if (optionalAccount.isPresent()) {
+            accountService.deleteById(optionalAccount.get().getAccountID());
+
+            return ResponseEntity.ok("User deleted");
+        }
+
+        return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
     }
 }
